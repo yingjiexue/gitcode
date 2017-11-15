@@ -1,0 +1,111 @@
+#---设置代码运行的文件路径------
+
+#cd D:\Mongo\bin
+#mongod  -dbpath D:/Mongo/data/db 打开mongo数据库
+setwd("F:\\学习\\量化学习\\策略代码")
+
+#---加载调用Mongo数据库的包
+
+library(rmongodb)
+
+#---定义更新基本面数据，并返回股票代码和名称的函数
+
+code=function(datbase){
+  shell.exec("stockbasic.py")
+  mongo=mongo.create()
+  if(mongo.is.connected(mongo)){
+    ns=paste0("Stock.",datbase)
+    x=mongo.find.one(mongo,ns)
+    y=mongo.bson.to.list(x)
+    codeandname=unlist(y$stockcod)
+    l=length(codeandname)
+    code=codeandname[seq(1,l,2)]
+    name=codeandname[seq(2,l,2)]
+    Encoding(name)="UTF-8"
+    return(data.frame(code,name))
+  }else{
+    print("数据库未链接")
+  }
+}
+
+#---给定股票代码更新需要的股票数据
+
+updata=function(sucode){
+  subcode=list(code=as.vector(sucode))
+  mongo=mongo.create()
+  mongo.remove(mongo,"Stock.subcode")
+  mongo.insert(mongo,"Stock.subcode",subcode)
+  shell.exec("stockserie.py")
+}
+
+#---根据股票代码提取需要的股票数据
+
+get_h_data=function(kcode){
+  mongo=mongo.create()
+  x=mongo.find.one(mongo,"Stock.stockserie",list(id=kcode))
+  y=mongo.bson.to.list(x)
+  sere=unlist(y$stockbasic)
+  l=length(sere)
+  dataser=data.frame(year=sere[seq(15,l,15)],open=as.numeric(sere[seq(1,l,15)]),high=as.numeric(sere[seq(3,l,15)]),close=as.numeric(sere[seq(3,l,15)]),low=as.numeric(sere[seq(4,l,15)]),
+                     volume=as.numeric(sere[seq(5,l,15)]),price_change=as.numeric(sere[seq(6,l,15)]),p_change=as.numeric(sere[seq(7,l,15)]),ma5=as.numeric(sere[seq(8,l,15)]),ma10=as.numeric(sere[seq(9,l,15)]),
+                     ma20=as.numeric(sere[seq(10,l,15)]),v_ma5=as.numeric(sere[seq(11,l,15)]),v_ma10=as.numeric(sere[seq(12,l,15)]),v_ma20=as.numeric(sere[seq(13,l,15)]),tureover=as.numeric(sere[seq(14,l,15)]))
+  names(dataser)=paste0(kcode,names(dataser))
+  return(dataser)
+}
+
+#---根据股票代码提取需要的股票数据
+get_k_data=function(kcode){
+  mongo=mongo.create()
+  x=mongo.find.one(mongo,"Stock.stockkdat",list(id=kcode))
+  y=mongo.bson.to.list(x)
+  sere=unlist(y$stockbasic)
+  l=length(sere)
+  dataser=data.frame(year=sere[seq(1,l,8)],open=as.numeric(sere[seq(2,l,8)]),high=as.numeric(sere[seq(4,l,8)]),close=as.numeric(sere[seq(3,l,8)]),low=as.numeric(sere[seq(5,l,8)]),
+                     volume=as.numeric(sere[seq(6,l,8)]))
+  names(dataser)=paste0(kcode,names(dataser))
+  return(dataser)
+}
+
+#---根据股票代码提取该只股票的基本面信息
+
+get_basic_inf=function(scode){
+  mongo=mongo.create()
+  x=mongo.find.one(mongo,"Stock.basic",list(id=scode))
+  y=mongo.bson.to.list(x)
+  sere=unlist(y$stockbasic)
+  Encoding(sere)="UTF-8"
+  dat=data.frame(t(sere))
+  return(dat)
+}
+
+candleplot<-function(dat,ndays=0){
+  library(TTR)
+  library(zoo)
+  library(xts)
+  library(quantmod)
+  nm=dat[,1]
+  l=length(nm)
+  newdat=as.matrix(dat[,-1])
+  rownames(newdat)=nm
+  if(ndays==0|l-ndays<0){
+    s=l
+  }else{
+    s=l-ndays
+  }
+  newdats=newdat[0:s,]
+  dss=as.xts(newdats)
+  chartSeries(dss,up.col = "red",dn.col = "green",name = gsub("[a-z]","",colnames(dat)[1]),theme="white")
+}
+
+
+
+subc=c("002821")
+updata(subc)
+dat=get_k_data("002821")
+candleplot(dat,0)
+addMACD()
+addSMA(5,col="red")
+addSMA(10,col="blue")
+addSMA(30,col="black")
+#---更新股票基本面信息
+stockcode=code("code")

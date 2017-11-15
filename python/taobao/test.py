@@ -1,3 +1,4 @@
+﻿#导入相关模块
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
@@ -6,6 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 browser = webdriver.Firefox()
 wait = WebDriverWait(browser, 20)
+
+
+#天猫国际登陆函数
 def login(user,password):
     url = 'https://www.tmall.hk/wow/member-club/act/login?redirectURL=https%3A%2F%2Fwww.tmall.hk%2F%3Fali_trackid%3D2%3Amm_26632258_3504122_57428267%3A1501946231_265_1618700379%26upsid%3D456935998a557ebb76e8ff147f1c8820%26clk1%3D456935998a557ebb76e8ff147f1c8820'
     browser.get(url)
@@ -27,6 +31,7 @@ def login(user,password):
         sword.send_keys(Keys.RETURN)
 
 
+#获取产品名称
 def product_name(keword):
     browser.switch_to_default_content()
     element = browser.find_element_by_xpath("//div[@class='s-combobox-input-wrap']/input[@class='s-combobox-input']")
@@ -34,11 +39,17 @@ def product_name(keword):
     element.send_keys(keword)
     element.send_keys(Keys.RETURN)
 
+
+
+#提取商品品牌
 def product_brand(browser):
     element = browser.find_element_by_xpath("//div[@class='j_Brand attr']/div/ul")
     brd=element.text
     s=brd.split("\n")
     return s
+
+
+#产品分类
 def product_class(browser):
     element = browser.find_element_by_xpath("//div[@class='j_Cate attr']/div/div/a")
     element.click()
@@ -46,12 +57,15 @@ def product_class(browser):
     brd=element.text
     s=brd.split("\n")
     return s
+
+
 def product_names(browser):
     element = browser.find_element_by_xpath("//div[@class='propAttrs j_nav_prop']/div[@class='j_Prop attr']/div/ul")
     brd = element.text
     s = brd.split("\n")
     return s
 
+#点击相关产品进入页面
 def whichprodut(i):
     s=browser.window_handles
     browser.switch_to_window(s[0])
@@ -60,6 +74,7 @@ def whichprodut(i):
     time.sleep(1)
     if i==0:return len(element)
 
+#获取店铺一般信息
 def generalinf():
     s = browser.window_handles
     browser.switch_to_window(s[1])
@@ -71,6 +86,7 @@ def generalinf():
     brd = element1.text+element2.text
     return brd
 
+#获取店铺描述信息
 def storeinf():
     js = ["var q=document.documentElement.scrollTop=810","var q=document.documentElement.scrollTop=870","var q=document.documentElement.scrollTop=910"]
     browser.execute_script(js[0])
@@ -89,6 +105,7 @@ def storeinf():
     browser.close()
     return sddf
 
+#翻页
 def page(x):
     js = "var q=document.documentElement.scrollTop=9030"
     browser.execute_script(js)
@@ -98,7 +115,7 @@ def page(x):
     element0.send_keys(Keys.RETURN)
     time.sleep(3)
 
-
+#抓取评论
 def comment():
     s = browser.window_handles
     browser.switch_to_window(s[1])
